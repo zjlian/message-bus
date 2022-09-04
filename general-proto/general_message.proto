@@ -1,0 +1,33 @@
+syntax = "proto3";
+package value;
+
+// 通用消息内 payload 使用的协议类型枚举
+enum PayloadProtocal
+{
+    // 原始字符串类型
+    PAYLOAD_PROTOCAL_RAW = 0;
+    // proto
+    PAYLOAD_PROTOCAL_PROTO = 1;
+    // json
+    PAYLOAD_PROTOCAL_JSON = 2;
+    // xml
+    PAYLOAD_PROTOCAL_XML = 3;
+};
+
+// 通用消息
+message GeneralMessage
+{
+    // 消息的唯一 id
+    string uuid = 1;
+    // 消息来源标识符
+    string source = 2;
+    // 消息的发布时间，毫秒精度
+    uint64 timestamp = 3;
+    // 序号/逻辑时间，用于确定同一时间点上的消息顺序
+    uint64 seq = 4;
+    
+    // payload 使用的协议
+    PayloadProtocal protocal = 5;
+    // payload，存储序列化后的自定义消息
+    string payload = 6;
+}
