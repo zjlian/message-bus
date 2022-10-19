@@ -1,6 +1,9 @@
 #pragma once
 
+#include "common/macro_utility.h"
+
 #include <memory>
+
 #include <zmq.hpp>
 namespace mbus
 {
@@ -9,18 +12,17 @@ namespace mbus
     class RpcClient
     {
     public:
-        RpcClient(const RpcClient &) = delete;
-        RpcClient(RpcClient &&) = delete;
-        RpcClient &operator=(const RpcClient &) = delete;
-        RpcClient &operator=(RpcClient &&) = delete;
+        DISABLE_COPY_AND_MOVE(RpcClient);
 
         RpcClient(const std::shared_ptr<zmq::context_t> &ctx);
 
         /// 开启调试模式，输出调试信息到终端
         void Debug();
 
-        /// 连接 rpc 服务端
+        /// 链接代理服务，多次调用会断开连接后重连
         void Connect(const std::string &broker_addr);
+        /// 重新连接上一次连接的代理服务
+        void Reconnect();
 
         /// 设置 rpc 请求超时时间
         void SetTimeout(size_t ms);
@@ -34,13 +36,9 @@ namespace mbus
         std::string SyncCall(const std::string &service, const std::string &argv);
 
     private:
-        /// 等待 zmq::socket 可读事件触发
-        bool WaitReadable(zmq::socket_t &socket);
-
-    private:
         std::shared_ptr<zmq::context_t> ctx_{};
         std::unique_ptr<zmq::socket_t> socket_{};
-        /// rpc 服务端的地址
+        /// 代理服务的地址
         std::string broker_addr_{};
         /// 唯一 id，用于区分身份
         std::string uuid_{};

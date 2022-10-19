@@ -2,7 +2,7 @@
 
 #include "general_message.pb.h"
 
-#include <google/protobuf/arena.h>
+#include <google/protobuf/message_lite.h>
 #include <type_traits>
 
 namespace mbus
@@ -30,11 +30,11 @@ namespace mbus
         return result;
     }
 
-    /// 任何派生自 google::protobuf::Message 的类，都生成 PROTO 协议的通用消息
+    /// 任何派生自 google::protobuf::MessageLite 的类，都生成 PROTO 协议的通用消息
     template <typename MessageType>
     auto MakeGeneralMessage(const MessageType &msg)
         -> typename std::enable_if<
-            std::is_base_of<google::protobuf::Message, MessageType>::value,
+            std::is_base_of<google::protobuf::MessageLite, MessageType>::value,
             value::GeneralMessage>::type
     {
         value::GeneralMessage result;
@@ -62,11 +62,11 @@ namespace mbus
     }
 
     /// 解析通用消息的 payload 部分到各个具体的 protobuf 序列化对象上，
-    /// 只有 MessageType 指定的类型继承于 google::protobuf::Message，才会重载到这个函数
+    /// 只有 MessageType 指定的类型继承于 google::protobuf::MessageLite，才会重载到这个函数
     template <typename MessageType>
     auto UnmakeGeneralMessage(const value::GeneralMessage &msg)
         -> typename std::enable_if<
-            std::is_base_of<google::protobuf::Message, MessageType>::value,
+            std::is_base_of<google::protobuf::MessageLite, MessageType>::value,
             MessageType>::type
     {
         MessageType result;

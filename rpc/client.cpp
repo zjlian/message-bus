@@ -15,6 +15,12 @@
 
 #include <zmq.hpp>
 
+/*
+    RPC 客户端发出的请求包格式: routing_id |  RPC_REQ | service_name | argv
+    使用 zmq 的多部分消息发出
+    routing_id 是 zmq socket 添加相关选项设置后自动携带的，用于区别请求的来源 
+*/
+
 namespace mbus
 {
 
@@ -22,15 +28,6 @@ namespace mbus
         : ctx_(ctx), uuid_(UUID())
     {
         assert(ctx_ != nullptr);
-        auto str = UUID2String(uuid_);
-        std::cout << str << std::endl;
-    }
-
-    bool RpcClient::WaitReadable(zmq::socket_t &socket)
-    {
-        std::array<zmq::pollitem_t, 1> items{{socket.handle(), 0, ZMQ_POLLIN, 0}};
-        zmq::poll(items, std::chrono::milliseconds(timeout_));
-        return items[0].revents & ZMQ_POLLIN;
     }
 
     void RpcClient::Debug()
@@ -44,16 +41,34 @@ namespace mbus
         assert(ctx_ != nullptr);
         assert(!broker_addr.empty());
 
-        // NOTE: cppzmq 封装的 zmq::socket_t 在析构时会自动断开连接，所以重复调用 Connect 函数，如果有，会先断开先前的连接
+        if (debug_ && socket_ == nullptr)
+        {
+            auto str = UUID2String(uuid_);
+            std::cout << "当前进程的 rpc 客户端 uuid: " << str << std::endl;
+        }
+
+        // NOTE: cppzmq 封装的 zmq::socket_t 在析构时会自动断开连接，所以重复调用 Connect 函数，会先断开先前的连接
         socket_ = std::make_unique<zmq::socket_t>(*ctx_, zmq::socket_type::dealer);
         assert(socket_ != nullptr && "Out Of Memory!!!");
+        // 设置 socket 的标识符
         socket_->set(zmq::sockopt::routing_id, uuid_);
+        // 设置 socket 关闭时丢弃所有未发送成功的消息
+        socket_->set(zmq::sockopt::linger, 0);
         broker_addr_ = broker_addr;
         socket_->connect(broker_addr_);
         if (debug_)
         {
-            std::cout << "连接 rpc 服务: " << broker_addr_ << std::endl;
+            std::cout << "连接 rpc 代理服务: " << broker_addr_ << std::endl;
         }
+    }
+
+    /// 重新连接上一次连接的代理服务
+    void RpcClient::Reconnect()
+    {
+        assert(ctx_ != nullptr);
+        assert(!broker_addr_.empty());
+
+        Connect(broker_addr_);
     }
 
     /// 设置 rpc 请求超时时间
@@ -61,6 +76,10 @@ namespace mbus
     {
         assert(ms >= 0);
         timeout_ = ms;
+        if (debug_)
+        {
+            std::cout << "rpc 请求超时时间修改为: " << timeout_ << std::endl;
+        }
     }
 
     /// 设置 rpc 请求失败重试次数
@@ -68,6 +87,10 @@ namespace mbus
     {
         assert(rerties >= 0);
         retries_ = rerties;
+        if (debug_)
+        {
+            std::cout << "rpc 请求重试次数修改为: " << timeout_ << std::endl;
+        }
     }
 
     /// 发起阻塞等待的 rpc 请求
@@ -80,6 +103,7 @@ namespace mbus
         std::vector<zmq::const_buffer> messages;
         messages.reserve(3);
         messages.push_back(MakeZmqBuffer(RPC_CLIENT));
+        messages.push_back(MakeZmqBuffer(RPC_REQ));
         messages.push_back(MakeZmqBuffer(service));
         messages.push_back(MakeZmqBuffer(argv));
 
@@ -96,7 +120,7 @@ namespace mbus
                 std::cout << "发送完成" << std::endl;
             }
 
-            if (WaitReadable(*socket_))
+            if (WaitReadable(*socket_, timeout_))
             {
                 auto response = ReceiveAll(*socket_);
                 if (debug_)
@@ -104,14 +128,18 @@ namespace mbus
                     std::cout << "收到服务端响应：" << StringifyMessages(response) << std::endl;
                 }
 
-                assert(response.size() >= 3 || "响应协议错误");
+                assert(response.size() >= 3 && "响应协议错误");
+
+                auto &res_role = response.front();
+                assert(Equal(res_role, RPC_WORKER) && "响应协议错误");
+                response.pop_front();
 
                 auto &res_header = response.front();
-                assert(memcmp(res_header.data<char>(), RPC_CLIENT, strlen(RPC_CLIENT)) || "响应协议错误");
+                assert(Equal(res_header, RPC_RES) && "响应协议错误");
                 response.pop_front();
 
                 auto &res_service = response.front();
-                assert(memcmp(res_service.data<char>(), service.data(), service.size()) || "响应服务错误");
+                assert(Equal(res_service, service) && "响应服务错误");
                 response.pop_front();
 
                 auto &res_payload = response.front();
@@ -132,10 +160,10 @@ namespace mbus
                         break;
                     }
                 }
-                Connect(broker_addr_);
+                Reconnect();
             }
         }
-
+        std::cout << "rpc 请求结束" << std::endl;
         return {};
     }
 

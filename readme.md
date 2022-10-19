@@ -40,15 +40,15 @@ include(FetchContent)
 # 指定
 FetchContent_Declare(
   message_bus
-  GIT_REPOSITORY git@gitee.com:valueplusplus/message-bus.git
+  GIT_REPOSITORY git@github.com:zjlian/message-bus.git
 )
 FetchContent_MakeAvailable(message_bus)
 message(STATUS "============= 仓库下载完成 ============= ") 
 ```
 然后给需要用这个库的 target 添加相关的依赖配置就可以了：
 ```cmake
-target_include_directories(${PROJECT_NAME} PUBLIC message_bus)
-target_link_libraries(${PROJECT_NAME} PUBLIC message_bus)
+target_include_directories(${PROJECT_NAME} PUBLIC message_bus mbus_rpc)
+target_link_libraries(${PROJECT_NAME} PUBLIC message_bus mbus_rpc)
 ```
 
 
