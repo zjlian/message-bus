@@ -1,14 +1,5 @@
 # 消息总线模式的进程间通信库
 
-## 需求
-1. 支持配置文件或命令启动参数，配置某些功能的开关
-2. 发布订阅模式，支持话题
-3. 嵌入模式运行，简单用法，仅支持单机多进程通信。使用 message-bus 的进程谁先启动，谁就是中心代理
-4. 独立服务模式运行，单独运行的 message-bus 服务程序，支持跨网络通信
-5. 独立服务模式支持记录消息日志，需要异步记录，尽量不影响消息收发的延迟
-6. 独立服务模式需要一定的可用性保证，服务崩溃对系统中节点通信的影响尽可能少
-7. 不考虑消息收发的可靠性，该通信库仅用于定时发布的各种传感器信息和状态信息
-
 ## 依赖
 1. **zmq**，基于 zmq 实现通信
 1. **cppzmq**，c++ 封装的 zmq 接口
@@ -34,16 +25,15 @@
 需要用 message-bus 进行进程间通信的项目，主要使用 cmake 提供 FetchContent 模块引入。
 在项目中的 CMakeLists.txt 文件中添加如下代码:
 ```cmake
-# 拉公司内部仓库的项目
-message(STATUS "正在下载公司内部仓库源码，如果需要请输入帐号密码")
+# 引入 FetchContent 模块
 include(FetchContent)
-# 指定
+# 声明第三方依赖库的资源信息
 FetchContent_Declare(
   message_bus
   GIT_REPOSITORY git@github.com:zjlian/message-bus.git
 )
+# 启用
 FetchContent_MakeAvailable(message_bus)
-message(STATUS "============= 仓库下载完成 ============= ") 
 ```
 然后给需要用这个库的 target 添加相关的依赖配置就可以了：
 ```cmake
