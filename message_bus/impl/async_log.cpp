@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <ostream>
+#include <spdlog/spdlog.h>
 #include <string_view>
 #include <thread>
 #include <unistd.h>
@@ -47,7 +48,7 @@ namespace mbus
         // todo flush可以优化
         node.out.flush();
         node.buff.pop_front();
-        std::cout << "buff size is " << node.buff.size() << std::endl;
+        spdlog::info("buff size is {}", node.buff.size());
     }
 
     void AsyncLog::ParseMessage()
@@ -61,7 +62,7 @@ namespace mbus
             char buf[size];
             file2.read(buf, size);
             general_message_to_read.ParseFromArray(buf, size);
-            std::cout << "序列化了：" << general_message_to_read.payload() << std::endl;
+            spdlog::info("serialized: {}", general_message_to_read.payload());
         }
     }
 
@@ -84,7 +85,7 @@ namespace mbus
                 node.out = std::ofstream(std::filesystem::current_path() / PATH / topic, std::ios::app | std::ios::binary);
                 topic_map_.emplace(topic, std::move(node));
                 search = topic_map_.find(topic);
-                std::cout << "insert" << std::endl;
+                spdlog::info("insert");
             }
             to_add_topic.store(false);
         }
@@ -124,7 +125,7 @@ namespace mbus
                 if (to_add_topic.load())
                 {
                     // 如果其他线程要求存入新的topic，则释放锁
-                    std::cout << "unlock" << std::endl;
+                    spdlog::info("unlock");
                     break;
                 }
                 // 序列化消息

@@ -35,8 +35,11 @@ namespace mbus
     // broker 端给 worker 端发送的请求处理成功的协议头
     constexpr const char *RPC_SUCCESS = "rpcsuc";
 
-    // 心跳包超时等待次数
-    constexpr size_t HEARTBEAT_LIVENESS = 3;
+    // broker 端给 client 端发送的请求处理失败的协议头
+    constexpr const char *RPC_NOTPROCESSED = "rpcunprocessed";
+
+    // 心跳包超时等待次数(4*2500 = 10秒)
+    constexpr size_t HEARTBEAT_LIVENESS = 4;
 
     // 心跳包等待间隔，单位毫秒
     constexpr size_t HEARTBEAT_INTERVAL = 2500;

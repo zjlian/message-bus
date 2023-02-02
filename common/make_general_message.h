@@ -24,6 +24,7 @@ namespace mbus
             value::GeneralMessage>::type
     {
         value::GeneralMessage result;
+        result.set_not_timeout(true);
         result.set_protocal(value::PAYLOAD_PROTOCAL_RAW);
         result.set_payload(std::string{msg});
 
@@ -38,6 +39,7 @@ namespace mbus
             value::GeneralMessage>::type
     {
         value::GeneralMessage result;
+        result.set_not_timeout(true);
         // 序列化到 std::string
         std::string buffer;
         msg.SerializeToString(&buffer);

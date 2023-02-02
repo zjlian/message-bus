@@ -9,7 +9,7 @@ namespace mbus
 {
 
     /// 获取当前系统时间的毫秒数
-    inline uint64_t Now()
+    inline int64_t Now()
     {
         timeval tv;
         gettimeofday(&tv, nullptr);

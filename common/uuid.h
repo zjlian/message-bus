@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <iostream>
+#include <spdlog/spdlog.h>
 #include <string>
 
 #include <boost/uuid/random_generator.hpp>
@@ -22,6 +23,7 @@ namespace mbus
 
     inline std::string UUID2String(const std::string &uuid)
     {
+        spdlog::info("uuid size is {}", uuid.size());
         assert(uuid.size() == 16);
         std::string result{};
 

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <spdlog/spdlog.h>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -48,12 +49,14 @@ namespace mbus
 
         pub_ = std::make_unique<zmq::socket_t>(*ctx_, zmq::socket_type::pub);
         assert(pub_ != nullptr && "Out Of Memory!!");
-        std::cout << "发布端连接 " << pub_addr << std::endl;
+        // std::cout << "发布端连接 " << pub_addr << std::endl;
+        spdlog::info("The publisher needs to connect {}", pub_addr);
         pub_->connect(pub_addr);
 
         sub_ = std::make_unique<zmq::socket_t>(*ctx_, zmq::socket_type::sub);
         assert(sub_ != nullptr && "Out Of Memory!!");
-        std::cout << "订阅端连接 " << sub_addr << std::endl;
+        // std::cout << "订阅端连接 " << sub_addr << std::endl;
+        spdlog::info("The sublisher needs to connect {}", sub_addr);
         sub_->connect(sub_addr);
 
         // 创建后台接收线程
@@ -105,6 +108,7 @@ namespace mbus
 
             do
             {
+                // spdlog::info("receive topic in ReceiveLoop of mbus");
                 zmq::message_t msg;
                 auto result = sub_->recv(msg, zmq::recv_flags::none);
                 if (result.has_value())
@@ -117,6 +121,7 @@ namespace mbus
             if (message.size() <= 1)
             {
                 // TODO: 处理收到没有按话题发布或是超时之类的异常
+                spdlog::warn("the size of message is less than 2");
                 continue;
             }
 
@@ -126,6 +131,7 @@ namespace mbus
             //     static_cast<char *>(topic.data()), topic.size()};
             std::string topic_str{
                 static_cast<char *>(topic.data()), topic.size()};
+            // spdlog::info("Receive the topic of message is {}", topic_str);
             // std::cout << topic_sv << std::endl;
             // 序列化回 proto 对象
             auto &msg = message[1];

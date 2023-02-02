@@ -4,6 +4,7 @@
 
 #include <memory>
 
+#include <mutex>
 #include <zmq.hpp>
 namespace mbus
 {
@@ -33,7 +34,9 @@ namespace mbus
         /// @brief 发起阻塞等待的 rpc 请求
         /// @param service 目标 rpc 服务的名称
         /// @param argv 请求参数
-        std::string SyncCall(const std::string &service, const std::string &argv);
+        /// @param timeout 超时时间 为0时为系统默认值，-1为无限等待，大于0时为实际等待值
+        /// @param retries 重试次数 为0时为系统默认值，-1为不重试，大于0时为实际重试值
+        std::string SyncCall(const std::string &service, const std::string &argv, const int64_t &timeout, const int &rerties);
 
     private:
         std::shared_ptr<zmq::context_t> ctx_{};
@@ -44,11 +47,13 @@ namespace mbus
         std::string uuid_{};
 
         /// 请求超时时间，毫秒
-        size_t timeout_{2500};
+        size_t timeout_{20000};
         /// 请求失败重试次数
         size_t retries_{3};
         /// 是否输出调试信息到终端
         bool debug_{};
+        // 同步发送互斥量
+        std::mutex send_mx_;
     };
 
 } // namespace mbus

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/make_general_message.h"
+#include "common/time.h"
 #include "general_message.pb.h"
 #include "message_bus/bus.h"
 
@@ -61,6 +62,7 @@ namespace mbus
             /// http://api.zeromq.org/4-1:zmq-send
 
             value::GeneralMessage general_message = MakeGeneralMessage(message);
+            general_message.set_timestamp(mbus::Now());
             std::string serialize;
             general_message.SerializeToString(&serialize);
 

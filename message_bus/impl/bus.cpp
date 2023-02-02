@@ -6,6 +6,7 @@
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <spdlog/spdlog.h>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -46,11 +47,11 @@ namespace mbus
         Bind(host, xpub_port, xsub_port);
         std::this_thread::sleep_for(std::chrono::seconds{1});
         worker_ = std::thread{[&] {
-            std::cout << "Running..." << std::endl;
+            spdlog::info("Running...");
             /// FIXME: 临时移除异步日志 socket
             zmq::proxy(zmq::socket_ref{*frontend_}, *backend_);
             // zmq::proxy(*frontend_, *backend_);
-            std::cout << "Stopped..." << std::endl;
+            spdlog::info("Stopped...");
         }};
     }
 
@@ -74,18 +75,21 @@ namespace mbus
         assert(xpub_port > 1023 && xpub_port < 65535);
         assert(xsub_port > 1023 && xsub_port < 65535);
 
-        std::cout << "正在启动服务..." << std::endl;
+        // std::cout << "正在启动服务..." << std::endl;
+        spdlog::info("starting service...");
 
         auto pub_addr = std::string{host};
         pub_addr += ":";
         pub_addr += std::to_string(xpub_port);
-        std::cout << "发布端需要连接地址: " << pub_addr << std::endl;
+        // std::cout << "发布端需要连接地址: " << pub_addr << std::endl;
+        spdlog::info("The address that the publisher needs to connect to is {}", pub_addr);
         backend_->bind(pub_addr);
 
         auto sub_addr = std::string{host};
         sub_addr += ":";
         sub_addr += std::to_string(xsub_port);
-        std::cout << "订阅端需要连接地址: " << sub_addr << std::endl;
+        // std::cout << "订阅端需要连接地址: " << sub_addr << std::endl;
+        spdlog::info("The address that the subscriber needs to connect to is {}", sub_addr);
         frontend_->bind(sub_addr);
 
         log_->bind("ipc://log");
@@ -114,7 +118,8 @@ namespace mbus
             try
             {
                 backend_->bind(pub_addr);
-                std::cout << "订阅端需要连接地址: " << pub_addr << std::endl;
+                // std::cout << "订阅端需要连接地址: " << pub_addr << std::endl;
+                spdlog::info("The address that the subscriber needs to connect to is {} (pub_addr)", pub_addr);
             }
             catch (std::exception &ex)
             {
@@ -136,7 +141,8 @@ namespace mbus
             try
             {
                 frontend_->bind(sub_addr);
-                std::cout << "发布端需要连接地址: " << pub_addr << std::endl;
+                // std::cout << "发布端需要连接地址: " << pub_addr << std::endl;
+                spdlog::info("The address that the publisher needs to connect to is {}", pub_addr);
             }
             catch (std::exception &ex)
             {
